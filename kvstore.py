@@ -3,14 +3,14 @@
 Project: Simple Persistent Key–Value Store (Project 1)
 Language: Python 3.x
 
-Commands Supported:
+Commands:
   SET <key> <value>
   GET <key>
   EXIT
 
-- Stores all data in memory and in a file named data.db
-- Uses append-only writes for persistence
-- On startup, rebuilds data from the file
+- Append-only persistence to data.db
+- Replay on startup
+- In-memory index uses a list (no dict/map)
 """
 
 import os
@@ -20,7 +20,7 @@ DATA_FILE = "data.db"
 
 class KeyValueStore:
     def __init__(self):
-        self.data = [] 
+        self.data = []  # list of [key, value]
         self.load_data()
 
     def load_data(self):
@@ -58,9 +58,9 @@ class KeyValueStore:
             os.fsync(f.fileno())
 
     def get(self, key):
-        """Return the value or NULL."""
-        value = self.get_from_memory(key)
-        return value if value else "NULL"
+        """Return the value if present, else None (print empty for missing)."""
+        return self.get_from_memory(key)
+
 
 def main():
     store = KeyValueStore()
@@ -81,13 +81,17 @@ def main():
             key, value = parts[1], parts[2]
             store.set(key, value)
             print("OK")
+            sys.stdout.flush()
         elif cmd == "GET" and len(parts) == 2:
             key = parts[1]
-            print(store.get(key))
+            val = store.get(key)
+            print("" if val is None else val)   # empty line for missing key
+            sys.stdout.flush()
         elif cmd == "EXIT":
             break
         else:
             print("ERR: Invalid command")
+            sys.stdout.flush()
 
 if __name__ == "__main__":
     main()
